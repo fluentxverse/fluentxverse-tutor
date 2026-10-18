@@ -1,0 +1,12 @@
+{
+  "name": "fluentxverse-tutor-source",
+  "private": true,
+  "description": "SolidJS tutor app for applications, screening, schedules, live lessons, and teaching operations.",
+  "scripts": {
+    "setup": "npm --prefix fluentxverse-tutor-solid-prototype ci --workspaces=false",
+    "dev": "npm --prefix fluentxverse-tutor-solid-prototype run dev",
+    "build": "npm --prefix fluentxverse-tutor-solid-prototype run build",
+    "preview": "npm --prefix fluentxverse-tutor-solid-prototype run preview",
+    "test": "cd fluentxverse-tutor-solid-prototype && bun test tests/unit.test.ts tests/attendanceReminder.test.ts tests/classroomSessionRefresh.test.ts tests/classroomMedia.test.ts tests/conversationalExerciseMarks.test.ts tests/dispatchLibrary.test.ts tests/lessonMaterialPosition.test.ts tests/lessonNotesIcons.test.ts tests/lessonVocabulary.test.ts tests/mediaUrl.test.ts tests/notificationLink.test.ts tests/productionEndpoints.test.ts tests/schedulePeriod.test.ts"
+  }
+}
