@@ -2,12 +2,12 @@ const { chromium } = require('@playwright/test');
 const assert = require('node:assert/strict');
 const base = process.env.TUTOR_TEST_URL || 'http://127.0.0.1:5177';
 (async () => {
-  const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });
+  const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH || '/usr/bin/google-chrome', args: ['--no-sandbox'] });
   try {
     for (const width of [1440, 375]) {
       const context = await browser.newContext({ viewport: { width, height: 900 } });
       let signedIn = false, role = 'tutor', certified = true;
-      await context.route(/^http:\/\/127\.0\.0\.1:8782\//, route => {
+      await context.route(/^(https:\/\/api\.fluentxverse\.(com|xyz)|http:\/\/(localhost|127\.0\.0\.1):(?:8765|8780|8782))\//, route => {
         const path = new URL(route.request().url()).pathname;
         const user = { userId: 'solid-auth-fixture', role, email: 'solid-auth@example.test', firstName: 'Alex', lastName: 'Tutor' };
         if (path === '/tutor/me' && !signedIn) return route.fulfill({ status: 401, json: { success: false } });
@@ -17,7 +17,8 @@ const base = process.env.TUTOR_TEST_URL || 'http://127.0.0.1:5177';
           const { role: omitted, ...restoredUser } = user;
           json.user = restoredUser;
         }
-        if (path === '/proof/tutor-certification/me') json.data = { snapshot: { missingRequirements: certified ? [] : ['interview'] }, proofs: [] };
+        if (path === '/proof/tutor-certification/me') json.data = { snapshot: { writtenPassed: true, speakingPassed: true, profileApproved: true, interviewPassed: certified, missingRequirements: certified ? [] : ['interview_pass'] }, proofs: [] };
+        if (path.replace(/\/$/, '') === '/tutor/email-verification') json.data = { verified: true };
         if (path === '/schedule/week') json.data = { slots: [], weekStart: '2026-10-05', weekEnd: '2026-10-11' };
         if (path.startsWith('/notifications')) json.data = { notifications: [], unreadCount: 0 };
         if (path === '/tutor/profile') json.data = { ...user, interests: [], education: [], profileStatus: 'approved' };
