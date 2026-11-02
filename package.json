@@ -1,6 +1,7 @@
 {
   "name": "fluentxverse-tutor-source",
   "private": true,
+  "license": "MIT",
   "description": "SolidJS tutor app for applications, screening, schedules, live lessons, and teaching operations.",
   "scripts": {
     "setup": "npm --prefix fluentxverse-tutor-solid-prototype ci --workspaces=false",
