@@ -1,7 +1,7 @@
 import { createSignal, createMemo, createEffect, on, onCleanup, untrack, useContext, splitProps, mergeProps, type Accessor, type Component, type JSX } from "solid-js";
 import { Portal, render } from "solid-js/web";
 import { cssStyle, Fragment } from "./utils/cssStyle";
-import { Router, Route } from '@solidjs/router';
+import { Router, Route, useParams } from '@solidjs/router';
 import { useLocation } from './routing';
 import TutorIcon from "./Components/Common/TutorIcon";
 import { ToastProvider } from './Components/Common/Toast';
@@ -49,8 +49,15 @@ const InboxPage = lazyRoute(() => import('./pages/InboxPage'));
 const KnowledgeBasePage = lazyRoute(() => import('./pages/KnowledgeBasePage'));
 const MyProfilePage = lazyRoute(() => import('./pages/MyProfilePage'));
 const PerformanceMetricsPage = lazyRoute(() => import('./pages/PerformanceMetricsPage'));
+const RewardsPage = lazyRoute(() => import('./pages/RewardsPage'));
 const YoungLearnersPage = lazyRoute(() => import('./pages/YoungLearnersPage'));
 const YoungLearnersLessonPage = lazyRoute(() => import('./pages/YoungLearnersLessonPage'));
+const FluentKidsPage = lazyRoute(() => import('../../shared/fluentKids/SolidPages').then(module => ({
+    default: () => <module.FluentKidsLibrary legacyHref="/materials/young-learners" />,
+})));
+const FluentKidsLessonPage = lazyRoute(() => import('../../shared/fluentKids/SolidPages').then(module => ({
+    default: () => <module.FluentKidsLesson id={useParams().id} audience="tutor" />,
+})));
 const RegisterPage = lazyRoute(() => import('./pages/RegisterPage'));
 const ConfirmEmailPage = lazyRoute(() => import('./pages/ConfirmEmailPage'));
 const ContactUsPage = lazyRoute(() => import('./pages/ContactUsPage'));
@@ -70,7 +77,7 @@ function AppShell(props: {
     const syncSystemTheme = createMemo(() => useThemeStore((state) => state.syncSystemTheme));
     const embeddedTheme = useEmbeddedTheme();
     const isLightOnlyPage = createMemo(() => _state1.path === '/' || /^\/(become-tutor|about|contact|register|confirm-email|privacy-policy|terms-of-service)\/?$/.test(_state1.path));
-    const isStandalonePage = createMemo(() => /^\/(classroom\/|interview\/room|lesson\/view|conversation-mat\/|materials\/(?:daily-dispatch|conversational-skills|business-english|young-learners)\/)/.test(_state1.path));
+    const isStandalonePage = createMemo(() => /^\/(classroom\/|interview\/room|lesson\/view|conversation-mat\/|materials\/(?:daily-dispatch|conversational-skills|business-english|young-learners|fluent-kids)\/)/.test(_state1.path));
     const effectiveTheme = createMemo(() => isLightOnlyPage() ? 'light' : (embeddedTheme() ?? resolvedTheme()));
     // Auth state for session modal
     // We'll read isAuthenticated via context inside the tree
@@ -172,12 +179,15 @@ export function AppInner() {
 							<Route path="/materials/business-english/:id" component={withCertified(BusinessEnglishPreviewPage)}/>
 							<Route path="/materials/young-learners" component={withCertified(YoungLearnersPage)}/>
 							<Route path="/materials/young-learners/lesson/:id" component={withCertified(YoungLearnersLessonPage)}/>
+							<Route path="/materials/fluent-kids" component={withCertified(FluentKidsPage)}/>
+							<Route path="/materials/fluent-kids/lesson/:id" component={withCertified(FluentKidsLessonPage)}/>
 							<Route path="/conversation-mat/:level/:chapter/:goalSlug" component={withCertified(LessonViewPage)}/>
 							<Route path="/inbox" component={withProtected(InboxPage)}/>
 							<Route path="/knowledge-base/:slug?" component={withCertified(KnowledgeBasePage)}/>
 							<Route path="/profile" component={withCertified(MyProfilePage)}/>
                             <Route path="/application/profile" component={withProtected(MyProfilePage)}/>
 							<Route path="/performance-metrics" component={withCertified(PerformanceMetricsPage)}/>
+                            <Route path="/rewards" component={withProtected(RewardsPage)}/>
 
 							<Route path="/contact" component={ContactUsPage}/>
 							<Route path="/about" component={AboutUsPage}/>

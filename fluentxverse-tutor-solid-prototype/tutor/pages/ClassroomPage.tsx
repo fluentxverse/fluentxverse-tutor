@@ -1,3 +1,5 @@
+import { learningCategoryLabel } from '../../../shared/learningTerminology';
+import { FLUENT_KIDS_NAME, fluentKidsClassroomMaterials, getFluentKidsLessonHref } from '../../../shared/fluentKids/curriculum';
 import ClassroomChatPanels, { ClassroomChatTools } from '../../../shared/ui/ClassroomChatPanels';
 import { createSignal, createMemo, createEffect, on, onCleanup, untrack, useContext, splitProps, mergeProps, type Accessor, type Component } from "solid-js";
 import { Portal } from "solid-js/web";
@@ -39,7 +41,6 @@ import { cacheBusinessEnglishLesson, cacheBusinessEnglishLessonList, readCachedB
 import './ClassroomPage.css';
 import '../../../shared/ui/classroom-student-base.css';
 import '../../../shared/ui/classroom-layout.css';
-import ClassroomRecordingFlag from '../../../shared/ui/ClassroomRecordingFlag';
 // Conversational Skills lesson interface for viewing
 interface ConversationalLesson {
     id: string;
@@ -780,7 +781,6 @@ const ClassroomPage = (_props0: ClassroomPageProps) => {
     const [activityLogs, setActivityLogs] = createSignal<ClassroomActivityLogData[]>([]);
     const [isSettingsOpen, setIsSettingsOpen] = createSignal(false);
     const [recordingAvailable, setRecordingAvailable] = createSignal(false);
-    const [recordingStatus, setRecordingStatus] = createSignal('');
     const [recordingRevision, setRecordingRevision] = createSignal(0);
     const [audioInputDevices, setAudioInputDevices] = createSignal<MediaDeviceInfo[]>([]);
     const [videoInputDevices, setVideoInputDevices] = createSignal<MediaDeviceInfo[]>([]);
@@ -1232,7 +1232,7 @@ const ClassroomPage = (_props0: ClassroomPageProps) => {
     const courses = [
         { id: 'conversational-skills', name: 'Conversational Skills', icon: '💬', description: 'Conversation lessons for practical speaking practice.' },
         { id: 'business-english', name: 'Business English', icon: '💼', description: 'Workplace English lessons and professional scenarios.' },
-        { id: 'young-learners', name: 'Young Learners', icon: '🎨', description: 'Visual lessons designed for younger students.' },
+        { id: 'young-learners', name: FLUENT_KIDS_NAME, icon: '🎨', description: 'Illustrated speaking lessons for ages 6–12.' },
         { id: 'daily-dispatch', name: 'Daily Dispatch', icon: '📰', description: 'News-based reading and discussion material.' },
     ];
     const isLessonMaterialCourse = (courseId?: string | null) => courseId === 'conversational-skills' || courseId === 'business-english';
@@ -1318,7 +1318,7 @@ const ClassroomPage = (_props0: ClassroomPageProps) => {
             return `/materials/conversational-skills/${lessonId}`;
         }
         if (courseId === 'young-learners') {
-            return `/materials/young-learners/lesson/${lessonId}`;
+            return getFluentKidsLessonHref(lessonId) ?? `/materials/young-learners/lesson/${encodeURIComponent(lessonId)}`;
         }
         if (courseId === 'business-english') {
             return `/materials/business-english/${lessonId}`;
@@ -1364,7 +1364,7 @@ const ClassroomPage = (_props0: ClassroomPageProps) => {
             : studentLessonRequest()?.courseId === 'business-english'
                 ? 'Business English'
                 : studentLessonRequest()?.courseId === 'young-learners'
-                    ? 'Young Learners'
+                    ? FLUENT_KIDS_NAME
                     : 'Lesson Material');
     const materialTabIconClass = createMemo(() => viewingDispatchArticle() ? 'fas fa-newspaper'
         : viewingConversationalLesson() ? 'fas fa-comments'
@@ -1924,6 +1924,10 @@ const ClassroomPage = (_props0: ClassroomPageProps) => {
         if (courseId === 'daily-dispatch') {
             return;
         }
+        const fluentKidsLessons = courseId === 'young-learners'
+            ? fluentKidsClassroomMaterials.map(transformLessonMaterialToLesson)
+            : [];
+        if (fluentKidsLessons.length) setAvailableLessons(fluentKidsLessons);
         if (courseId === 'business-english') {
             const cachedLessons = materialCourseCacheRef.current[courseId] || readCachedBusinessEnglishLessonList<Lesson>(courseId);
             if (cachedLessons?.length) {
@@ -1964,7 +1968,7 @@ const ClassroomPage = (_props0: ClassroomPageProps) => {
                 if (loadId !== materialLoadIdRef.current)
                     return;
                 if (result.success && result.lessons) {
-                    setAvailableLessons(result.lessons);
+                    setAvailableLessons([...fluentKidsLessons, ...result.lessons]);
                 }
             }
         }
@@ -2813,8 +2817,7 @@ const ClassroomPage = (_props0: ClassroomPageProps) => {
         {lessonStart.wrapUp && <div class="classroom-start-wait" role="status">{lessonStart.wrapUpMessage}</div>}
 
         {/* Video Area */}
-        <ClassroomRecordingNotice socket={socketInstance()} provider={mediaProvider()} openRevision={recordingRevision()} onAvailabilityChange={setRecordingAvailable} autoPrompt={false} onStatusChange={setRecordingStatus}/>
-        <ClassroomRecordingFlag available={recordingAvailable()} status={recordingStatus()} onPreferences={() => setRecordingRevision(value => value + 1)}/>
+        <ClassroomRecordingNotice socket={socketInstance()} provider={mediaProvider()} openRevision={recordingRevision()} onAvailabilityChange={setRecordingAvailable} autoPrompt={false}/>
         <div class="video-section">
           {/* Main Video */}
           <div class="video-main">
@@ -3072,7 +3075,7 @@ const ClassroomPage = (_props0: ClassroomPageProps) => {
               Go to Selection Tab
             </button>
             <div class="dispatch-view-meta">
-              <span class="dispatch-view-category">{viewingDispatchArticle().category}</span>
+              <span class="dispatch-view-category">{learningCategoryLabel(viewingDispatchArticle().category)}</span>
               <span class="dispatch-view-date">
                 {new Date(`${dispatchPostDate(viewingDispatchArticle())}T00:00:00Z`).toLocaleDateString('en-US', {
                 timeZone: 'UTC',
@@ -3311,7 +3314,7 @@ const ClassroomPage = (_props0: ClassroomPageProps) => {
                     setShowLessonRequest(false);
                 }}/>)}
                 
-                {showSelectedCourseDetails() && selectedCourse() !== 'daily-dispatch' && (<CurriculumMaterialPicker loading={loadingMaterials()} currentId={studentLessonRequest()?.courseId === selectedCourse() ? studentLessonRequest().lessonId : undefined} materials={availableLessons().map(item => ({
+                {showSelectedCourseDetails() && selectedCourse() !== 'daily-dispatch' && (<CurriculumMaterialPicker groupLabel={selectedCourse() === 'young-learners' ? 'Unit' : 'Chapter'} loading={loadingMaterials()} currentId={studentLessonRequest()?.courseId === selectedCourse() ? studentLessonRequest().lessonId : undefined} materials={availableLessons().map(item => ({
                     id: item.id, title: item.title, level: getLevelNumber(item),
                     chapter: getChapterNumber(item), lesson: getLessonNumber(item),
                     goal: item.lessonData?.header?.goalText || ''
